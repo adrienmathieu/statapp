@@ -57,25 +57,37 @@ def phi(t):
 #        y.append(Y(sig,k/n,bm,T))
 #    return y
 
-def sigma(phi, a, t, x, fbm, T):
-    n = len(x)
-    if t == 0:
-        return 0
-    else:
-        taille = int(round((t / T) * n))
-        fbm_diff = np.diff(fbm[:taille])  # Différence entre les valeurs successives de fbm jusqu'à la taille spécifiée
-        S = a(x[:taille - 1]) * fbm_diff  # Produit élément par élément de a(x[k]) et (fbm[k+1] - fbm[k])
-        return phi(np.sum(S))
+def sigma(phi, a, x, fbm, T):
+    n = len(fbm)
+    a_values = a(x)
+    fbm_diff = np.diff(fbm)
+    SIGMA = [0]
+    int_sigma = 0
+    for t in range(1,64*T*n):
+        a_values_t = a_values[(t-1)*64:t*64+1]
+        fbm_t = fbm_diff[(t-1)*64:t*64+1]
+        int_sigma += np.sum(a_values_t*fbm_t)
+        SIGMA.append(phi(sigma))
+    return SIGMA
 
-def Y(sigma_values, t, bm, T):
+def generate_Y(sigma_values, bm, T):
     n = len(bm)
-    if t == 0:
-        return 0
-    else:
-        taille = int(round((t / T) * n))
-        sigma_values_trimmed = sigma_values[:taille - 1][:-1]# Coupe les valeurs de sigma pour correspondre à la taille
-        bm_diff = np.diff(bm[:taille-1]) # Différence entre les valeurs successives de bm jusqu'à la taille spécifiée
-        return np.sum(sigma_values_trimmed * bm_diff)
+    bm_diff = np.diff(bm)
+    index = np.linspace(0, T, n)
+    Y = [0]
+    y = 0
+    for t in index[1:]:
+        sigma_values_t = sigma_values[(t-1)*64:t*64+1]
+        bm_t = bm_diff[(t-1)*64:t*64+1]
+        y += np.sum(sigma_values_t*bm_t)
+        Y.append(y)
+    return Y
+"""
+    taille = int(round((t / T) * n))
+    sigma_values_trimmed = sigma_values[:taille - 1][:-1]# Coupe les valeurs de sigma pour correspondre à la taille
+    bm_diff = np.diff(bm[:taille-1]) # Différence entre les valeurs successives de bm jusqu'à la taille spécifiée
+    return np.sum(sigma_values_trimmed * bm_diff)
+"""
 
 def sampling(T, H, N):
     n = 2 ** N
@@ -156,11 +168,6 @@ n = 2**N
 #Y_sampling = read_csv('valeurs_y.csv')
 #Z = z(Y_sampling)
 # we observe Y_{i/2**N} for i in [0,T*2**N]
-
-plt.hist(final_H(H,20,N,T)[0], range = (0,1), histtype = 'stepfilled')
-plt.xlabel('valeur de H')
-plt.title('Histogramme de l\'estimation de H = 0.75 pour j = 7')
-plt.show()
 
 
 
