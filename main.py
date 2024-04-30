@@ -59,13 +59,19 @@ def phi(t):
 
 def sigma(phi, a, x, fbm, T):
     n = len(fbm)
+    index = -1
     a_values = a(x)
     fbm_diff = np.diff(fbm)
+    a_dot_f = a_values*fbm_diff
+    cum_a_dot_t = np.cumsum(a_dot_f)
     SIGMA = [0]
-    int_sigma = 0
-    for t in range(1,64*T*n):
-        a_values_t = a_values[(t-1)*64:t*64+1]
-        fbm_t = fbm_diff[(t-1)*64:t*64+1]
+    while index != n*T*64*64 - 1:
+        index += 64
+        SIGMA.append(phi(cum_a_dot_t[index]))
+
+    for t in range(1,T,n*64):
+        a_values_t = a_values[(t-1/(n*64))*64:t*64+1]
+        fbm_t = fbm_diff[(t-1/(n*64))*64:t*64+1]
         int_sigma += np.sum(a_values_t*fbm_t)
         SIGMA.append(phi(sigma))
     return SIGMA
@@ -73,12 +79,12 @@ def sigma(phi, a, x, fbm, T):
 def generate_Y(sigma_values, bm, T):
     n = len(bm)
     bm_diff = np.diff(bm)
-    index = np.linspace(0, T, n)
+    index = np.linspace(0, T, n*T)
     Y = [0]
     y = 0
     for t in index[1:]:
-        sigma_values_t = sigma_values[(t-1)*64:t*64+1]
-        bm_t = bm_diff[(t-1)*64:t*64+1]
+        sigma_values_t = sigma_values[(t-1/n)*64:t*64+1]
+        bm_t = bm_diff[(t-1/n)*64:t*64+1]
         y += np.sum(sigma_values_t*bm_t)
         Y.append(y)
     return Y
