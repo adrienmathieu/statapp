@@ -19,90 +19,33 @@ def Fbm(H, T, n):
     return fbm_sample
 
 def a(t):
-    return 1
+    return t #faut trouver une autre fonction mais en sah ça marche
 
 def phi(t):
     return t**2
 
-#def sigma(phi, a, t,x,fbm, T): #OK, renvoie sigma(t) pour t dans [0,T]
-#    n = len(x)
-#    if t == 0:
-#       return 0
-#    else:
-#        taille = int(round((t/T)*n))
-#        S = np.zeros(taille)
-#        for k in range(taille-1):
-#            S[k] = (a(x[k]) * (fbm[k+1] - fbm[k]))
-#        return phi(np.sum(S))
-
-#def Y(sigma, t, bm, T): #OK, renvoie Y(t) pour t dans [0,T]
-#    n = len(bm)
-#    if t == 0:
-#        return 0
-#    else:
-#        taille = int(round((t/T)*n))
-#        S = []
-#        for k in range(taille -1):
-#            S.append(sigma[k] * (bm[k+1] - bm[k])) #sigma[k] = sig(kt/n)
-#        return sum(S)
-
-#def sampling(T,H,N):
-#    n = 2**N
-#    fbm = Fbm(H, T, n)
-#    bm = Fbm(0.5, T, n)
-#    x = np.linspace(0, T, n) #de la forme kT/n
-#    sig = [sigma(phi,a,k/n, x , fbm, T) for k in range(n)] #de la forme k/n
-#    y = []
-#    for k in range(T*n):
-#        y.append(Y(sig,k/n,bm,T))
-#    return y
-
-def sigma(phi, a, x, fbm, T):
-    n = len(fbm)
-    index = -1
-    a_values = a(x)
+def sigma(phi, a, x, fbm, T): #marche
+    a_values = a(x)[:-1]
     fbm_diff = np.diff(fbm)
     a_dot_f = a_values*fbm_diff
     cum_a_dot_t = np.cumsum(a_dot_f)
-    SIGMA = [0]
-    while index != n*T*64*64 - 1:
-        index += 64
-        SIGMA.append(phi(cum_a_dot_t[index]))
-
-    for t in range(1,T,n*64):
-        a_values_t = a_values[(t-1/(n*64))*64:t*64+1]
-        fbm_t = fbm_diff[(t-1/(n*64))*64:t*64+1]
-        int_sigma += np.sum(a_values_t*fbm_t)
-        SIGMA.append(phi(sigma))
+    SIGMA = [0]+[phi(cum_a_dot_t[i*64]) for i in range(1,T*64*n)]
     return SIGMA
 
-def generate_Y(sigma_values, bm, T):
-    n = len(bm)
-    bm_diff = np.diff(bm)
-    index = np.linspace(0, T, n*T)
-    Y = [0]
-    y = 0
-    for t in index[1:]:
-        sigma_values_t = sigma_values[(t-1/n)*64:t*64+1]
-        bm_t = bm_diff[(t-1/n)*64:t*64+1]
-        y += np.sum(sigma_values_t*bm_t)
-        Y.append(y)
-    return Y
-"""
-    taille = int(round((t / T) * n))
-    sigma_values_trimmed = sigma_values[:taille - 1][:-1]# Coupe les valeurs de sigma pour correspondre à la taille
-    bm_diff = np.diff(bm[:taille-1]) # Différence entre les valeurs successives de bm jusqu'à la taille spécifiée
-    return np.sum(sigma_values_trimmed * bm_diff)
-"""
+T = 3
+H = 0.1
+N = 10
+n = 2**N
+sample = 64
+x = np.linspace(0,3,sample*sample*T*n)
 
-def sampling(T, H, N):
-    n = 2 ** N
-    fbm = Fbm(H, T, n)
-    bm = Fbm(0.5, T, n)
-    x = np.linspace(0, T, n)  # de la forme kT/n
-    sig = np.array([sigma(phi, a, k / n, x, fbm, T) for k in range(n)])  # de la forme k/n
-    y = np.array([Y(sig, k / n, bm, T) for k in range(T * n)])  # Optimisé avec des opérations vectorielles
-    return y
+def Y_sampling(phi,a,bm,T): #marche
+    bm_diff = np.diff(bm)
+    Sig = sigma(phi,a,x,fBM,T)[:-1]
+    a_dot_f = Sig*bm_diff
+    cum_a_dot_t = np.cumsum(a_dot_f)
+    Y  = [0] + [cum_a_dot_t[i*64] for i in  range(1,T*n)]
+    return Y
 
 
 def z(Y):
