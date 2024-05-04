@@ -111,7 +111,7 @@ n = 2**N
 sample = 64
 index = 10
 x = np.linspace(0,T,sample*sample*T*n)
-print(_pre_final_H(H,index)
+print(_pre_final_H(H,index))
 
 
 
